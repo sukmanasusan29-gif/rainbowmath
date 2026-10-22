@@ -1,0 +1,44 @@
+========================================================================
+RAINBOW MATH ADVENTURE - BALAPAN BENTENG BILANGAN (PWA READY)
+Khusus Kelas 2 MIS An Najiyah | Pembuat: Susan Sukmana
+========================================================================
+
+PETUNJUK STRUKTUR FOLDER:
+========================
+Buatlah folder di komputer Anda dengan struktur sebagai berikut:
+
+[Folder Utama]
+│
+├── index.html
+├── manifest.webmanifest
+├── sw.js
+├── README.txt
+└── icons/
+    ├── icon-192.png
+    └── icon-512.png
+
+*Catatan untuk file Ikon (.png): Anda dapat menyimpan file icon-192.png dan icon-512.png dari kode SVG di atas atau menggantinya dengan gambar PNG buatan Anda sendiri dengan ukuran 192x192 px dan 512x512 px.
+
+
+LOKASI & CARA UPLOAD KE GITHUB PAGES (GRATIS & HTTPS):
+=======================================================
+1. Buka website https://github.com/ lalu masuk (Login) atau buat akun.
+2. Klik tombol "New" untuk membuat Repositori Baru.
+3. Beri nama repositori, contoh: rainbow-math
+4. Pilih opsi "Public", centang "Add a README file", lalu klik "Create repository".
+5. Di halaman repositori baru Anda, klik "Add file" -> "Upload files".
+6. Upload seluruh file (index.html, manifest.webmanifest, sw.js, README.txt) serta folder icons yang berisi icon-192.png dan icon-512.png.
+7. Klik tombol hijau "Commit changes".
+8. Buka menu "Settings" repositori -> Pilih menu "Pages" di bilah kiri.
+9. Pada bagian "Build and deployment", di bawah "Branch", pilih "main" (atau "master") dan folder "/ (root)", lalu klik "Save".
+10. Tunggu 1 - 3 menit. GitHub akan memberikan link HTTPS aplikasi Anda (contoh: https://username.github.io/rainbow-math/).
+11. Buka link tersebut melalui browser HP (Chrome / Safari), lalu tekan "Instal Aplikasi" atau "Add to Home Screen".
+
+
+========================================================================
+PEMBERITAHUAN SYARAT LAYANAN & PWA (PROGRESSIVE WEB APP)
+========================================================================
+- Aplikasi ini dikembangkan dengan teknologi PWA modern.
+- Saat dimuat pertama kali di browser via GitHub Pages (HTTPS), file PWA akan otomatis dipasang oleh Service Worker (sw.js).
+- Karena pustaka 3D (Three.js), Tailwind CSS, Font Awesome, dan Google Fonts diambil dari CDN internet resmi demi menjaga stabilitas dan kualitas grafik tanpa memberatkan memori HP, pastikan HP/perangkat guru terhubung ke internet saat pertama kali memuat game.
+========================================================================

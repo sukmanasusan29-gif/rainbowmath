@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0284c7" rx="96"/>
+  <!-- Rainbow Arch -->
+  <path d="M 80 380 A 176 176 0 0 1 432 380" fill="none" stroke="#ef4444" stroke-width="20"/>
+  <path d="M 100 380 A 156 156 0 0 1 412 380" fill="none" stroke="#f97316" stroke-width="20"/>
+  <path d="M 120 380 A 136 136 0 0 1 392 380" fill="none" stroke="#facc15" stroke-width="20"/>
+  <path d="M 140 380 A 116 116 0 0 1 372 380" fill="none" stroke="#10b981" stroke-width="20"/>
+  <!-- Toy Car Center -->
+  <rect x="176" y="240" width="160" height="75" rx="20" fill="#ef4444" stroke="#ffffff" stroke-width="8"/>
+  <rect x="216" y="200" width="80" height="45" rx="10" fill="#0f172a"/>
+  <circle cx="208" cy="320" r="26" fill="#1e293b" stroke="#facc15" stroke-width="8"/>
+  <circle cx="304" cy="320" r="26" fill="#1e293b" stroke="#facc15" stroke-width="8"/>
+  <!-- Star -->
+  <polygon points="256,60 272,100 316,100 280,126 294,166 256,140 218,166 232,126 196,100 240,100" fill="#facc15"/>
+</svg>
