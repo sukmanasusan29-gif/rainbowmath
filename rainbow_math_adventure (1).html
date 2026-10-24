@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAINBOW MATH ADVENTURE: BALAPAN BENTENG BILANGAN</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Three.js Library for Full 3D Graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            overflow: hidden;
+            background-color: #0284c7;
+            margin: 0;
+            padding: 0;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* Glassmorphism & UI Enhancements */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .btn-3d {
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0px rgba(0, 0, 0, 0.3);
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px rgba(0, 0, 0, 0.3);
+        }
+        .car-card {
+            transition: all 0.2s ease;
+        }
+        .car-card.selected {
+            border-color: #facc15;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
+        }
+        /* Custom scrollbar for car selection */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Canvas 3D World -->
+    <div id="canvas-container"></div>
+
+    <!-- MAIN UI OVERLAY LAYER -->
+    <div id="ui-layer" class="relative z-10 w-full h-screen pointer-events-none flex flex-col justify-between p-3 sm:p-5">
+        
+        <!-- HEADER GAME: Skor, Level, Koin, Bintang, & Menu -->
+        <header class="flex justify-between items-start w-full gap-2 pointer-events-auto">
+            <!-- Informasi Level & Progres -->
+            <div class="glass-panel p-3 rounded-2xl flex flex-col gap-1.5 max-w-[280px] sm:max-w-xs shadow-xl">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="level-title" class="text-xs sm:text-sm font-extrabold text-yellow-300">LEVEL 1: TANPA MEMINJAM</span>
+                    <span id="stage-count" class="text-xs font-bold bg-amber-500/90 px-2.5 py-0.5 rounded-full text-slate-950">1 / 3</span>
+                </div>
+                <!-- Progres Bar Balapan -->
+                <div class="w-full bg-slate-800/80 h-3.5 rounded-full overflow-hidden border border-slate-600 p-0.5">
+                    <div id="level-progress" class="bg-gradient-to-r from-red-500 via-yellow-400 via-emerald-400 to-cyan-400 h-full w-0 rounded-full transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- Indikator Skor, Nyawa, Bintang & Pause -->
+            <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 sm:gap-5 shadow-xl">
+                <!-- Bintang -->
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-star text-yellow-400 text-xl sm:text-2xl drop-shadow"></i>
+                    <span id="stars-text" class="text-lg sm:text-xl font-black text-white">0</span>
+                </div>
+                <div class="w-px h-6 bg-slate-600"></div>
+                <!-- Koin Balap -->
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-coins text-amber-400 text-lg sm:text-xl drop-shadow"></i>
+                    <span id="score-text" class="text-lg sm:text-xl font-black text-amber-300">0</span>
+                </div>
+                <div class="w-px h-6 bg-slate-600"></div>
+                <!-- Bensin / Nyawa -->
+                <div id="lives-container" class="flex gap-1 text-rose-500 text-lg sm:text-xl">
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <div class="w-px h-6 bg-slate-600"></div>
+                <!-- Tombol Jeda / Pause -->
+                <button onclick="togglePause()" class="btn-3d bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl text-lg flex items-center justify-center border border-indigo-300">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SOAL PENGURANGAN (Tampil di Tengah Atas) -->
+        <div id="question-banner" class="self-center glass-panel px-6 py-3 sm:py-4 rounded-3xl border-4 border-yellow-400 text-center shadow-2xl transition-all transform scale-100 pointer-events-auto my-1 max-w-xl w-full">
+            <div class="text-xs sm:text-sm uppercase tracking-wider text-cyan-300 font-extrabold mb-1 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-flag-checkered text-yellow-400"></i>
+                <span>Kemudikan Mobil Menembus Gerbang Jawaban Benar!</span>
+            </div>
+            <div id="math-question" class="text-3xl sm:text-5xl font-black text-yellow-300 tracking-wider drop-shadow-md">
+                458 - 123 = ?
+            </div>
+        </div>
+
+        <!-- FOOTER & KONTROL BALAP (JOYSTICK & TURBO LOMPAT) -->
+        <footer class="flex justify-between items-end w-full gap-4">
+            <!-- Virtual Joystick Zone -->
+            <div id="joystick-zone" class="w-32 h-32 sm:w-40 sm:h-40 rounded-full glass-panel relative pointer-events-auto border-4 border-cyan-400/60 flex items-center justify-center shadow-2xl">
+                <div id="joystick-knob" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-cyan-500 to-sky-300 shadow-xl absolute border-2 border-white transform transition-transform duration-75 flex items-center justify-center">
+                    <i class="fa-solid fa-car text-slate-950 text-base"></i>
+                </div>
+            </div>
+
+            <!-- Identitas Sekolah & Pembuat -->
+            <div class="hidden md:flex flex-col items-center glass-panel px-5 py-2.5 rounded-2xl text-xs text-slate-200 border border-cyan-400/40">
+                <span class="font-extrabold text-yellow-300 text-sm">MIS An Najiyah • Kelas 2</span>
+                <span>Pembuat: <b class="text-white font-bold">Susan Sukmana</b></span>
+            </div>
+
+            <!-- Tombol Jump / Turbo Jump -->
+            <div class="pointer-events-auto">
+                <button id="jump-btn" ontouchstart="triggerJump()" onclick="triggerJump()" class="btn-3d w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 text-slate-950 font-black flex flex-col items-center justify-center border-4 border-yellow-200 active:scale-95 shadow-2xl">
+                    <i class="fa-solid fa-angles-up text-2xl"></i>
+                    <span class="text-xs font-black mt-0.5">TURBO</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- MODAL MENU UTAMA / START & PILIH MOBIL -->
+    <div id="start-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel max-w-2xl w-full p-6 sm:p-8 rounded-3xl border-4 border-yellow-400 text-center shadow-2xl relative overflow-hidden flex flex-col items-center max-h-[92vh] overflow-y-auto no-scrollbar">
+            
+            <div class="w-20 h-20 bg-gradient-to-tr from-red-500 via-yellow-400 to-emerald-400 rounded-3xl flex items-center justify-center border-4 border-yellow-200 shadow-2xl transform -rotate-3 mb-3">
+                <i class="fa-solid fa-car-side text-4xl text-slate-950"></i>
+            </div>
+
+            <h1 class="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-cyan-300 mb-1">
+                RAINBOW MATH ADVENTURE
+            </h1>
+            <h2 class="text-lg sm:text-xl font-extrabold text-cyan-300 mb-4 tracking-wider">
+                BALAPAN BENTENG BILANGAN
+            </h2>
+
+            <!-- Info Pembuat & Sekolah -->
+            <div class="bg-indigo-950/80 p-3.5 rounded-2xl border border-indigo-700/60 w-full mb-4 text-left text-xs sm:text-sm text-slate-200 space-y-1.5">
+                <p class="flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-yellow-400 text-base"></i>
+                    <span><b>Sekolah:</b> MIS An Najiyah (Kelas 2)</span>
+                </p>
+                <p class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-cyan-400 text-base"></i>
+                    <span><b>Pembuat:</b> Susan Sukmana</span>
+                </p>
+                <p class="flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-emerald-400 text-base"></i>
+                    <span><b>Cara Bermain:</b> Kemudikan Mobil Mainan dengan Keyboard (WASD/Panah) atau Joystick di layar. Terobos Gerbang dengan jawaban pengurangan yang benar!</span>
+                </p>
+            </div>
+
+            <!-- Pemilihan Warna Mobil Mainan 3D -->
+            <div class="w-full mb-5">
+                <h3 class="text-sm font-extrabold text-yellow-300 mb-2 uppercase tracking-wider flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-palette"></i> Pilih Warna Mobil Mainan Favoritmu:
+                </h3>
+                <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                    <button onclick="selectCarColor(0xef4444, this)" class="car-card selected glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Merah</span>
+                    </button>
+                    <button onclick="selectCarColor(0x3b82f6, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Biru</span>
+                    </button>
+                    <button onclick="selectCarColor(0xeab308, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-yellow-400 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Kuning</span>
+                    </button>
+                    <button onclick="selectCarColor(0xec4899, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Pink</span>
+                    </button>
+                    <button onclick="selectCarColor(0xa855f7, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-purple-500 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Ungu</span>
+                    </button>
+                    <button onclick="selectCarColor(0x10b981, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Hijau</span>
+                    </button>
+                    <button onclick="selectCarColor(0x06b6d4, this)" class="car-card glass-panel p-2 rounded-xl flex flex-col items-center gap-1 border-2 border-slate-500">
+                        <div class="w-8 h-8 rounded-full bg-cyan-400 border-2 border-white shadow"></div>
+                        <span class="text-[10px] font-extrabold">Cyan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tombol Mulai Game -->
+            <button onclick="startGame()" class="btn-3d w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xl sm:text-2xl py-4 rounded-2xl border-2 border-emerald-200 flex items-center justify-center gap-3 shadow-xl">
+                <i class="fa-solid fa-play text-2xl"></i> MULAI BALAPAN 3D
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL JEDA / PAUSE -->
+    <div id="pause-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-3xl border-4 border-indigo-500 text-center shadow-2xl">
+            <h3 class="text-2xl font-black text-yellow-300 mb-4"><i class="fa-solid fa-pause mr-2"></i>BALAPAN DIJEDA</h3>
+            <div class="space-y-3">
+                <button onclick="togglePause()" class="btn-3d w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 rounded-xl border border-emerald-300">
+                    <i class="fa-solid fa-play mr-2"></i> Lanjutkan
+                </button>
+                <button onclick="restartLevel()" class="btn-3d w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl border border-amber-300">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Ulangi Level Ini
+                </button>
+                <button onclick="returnToMainMenu()" class="btn-3d w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-xl border border-rose-300">
+                    <i class="fa-solid fa-house mr-2"></i> Menu Utama
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PETUNJUK & JAWABAN SALAH -->
+    <div id="feedback-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-6 rounded-3xl border-4 border-rose-500 text-center shadow-2xl">
+            <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-rose-500/20 text-rose-400 border-2 border-rose-400 flex items-center justify-center text-3xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-2xl font-black text-rose-300 mb-2">Jawaban Belum Tepat!</h3>
+            <p id="feedback-hint" class="text-sm text-slate-200 bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 mb-5 leading-relaxed font-semibold">
+                Petunjuk: Kurangkan mulai dari nilai tempat satuan (paling kanan), lalu puluhan, dan ratusan!
+            </p>
+            <button onclick="closeFeedback()" class="btn-3d w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black py-3.5 rounded-xl border border-yellow-200">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Coba Terobos Lagi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL HASIL AKHIR / FINISH LINE CELEBRATION -->
+    <div id="result-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full p-6 sm:p-8 rounded-3xl border-4 border-yellow-400 text-center shadow-2xl relative">
+            <div class="w-24 h-24 mx-auto mb-3 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 rounded-3xl border-4 border-yellow-200 flex items-center justify-center text-slate-950 text-5xl shadow-2xl transform rotate-3">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-yellow-300 mb-1">
+                JUARA BALAPAN MATH!
+            </h2>
+            <p class="text-xs sm:text-sm text-cyan-200 font-bold mb-4">
+                Petualangan Benteng Bilangan MIS An Najiyah Selesai
+            </p>
+
+            <div class="bg-indigo-950/80 p-4 rounded-2xl border border-indigo-700/60 mb-6 space-y-2.5">
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-300">Total Bintang Balap:</span>
+                    <span id="final-stars" class="text-yellow-400 text-xl font-black">12 / 12</span>
+                </div>
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-300">Total Skor / Koin:</span>
+                    <span id="final-score" class="text-amber-300 text-xl font-black">1200</span>
+                </div>
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-300">Gelar Pemain:</span>
+                    <span class="text-emerald-400 font-extrabold text-base">Pembalap Ulung Benteng Bilangan</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-300 mb-5">
+                Karya Edukasi Interaktif Kelas 2 • Pembuat: <b class="text-white">Susan Sukmana</b>
+            </p>
+
+            <button onclick="returnToMainMenu()" class="btn-3d w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xl py-3.5 rounded-xl border border-emerald-300">
+                <i class="fa-solid fa-house mr-2"></i> Kembali ke Menu Utama
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           DATA LEVEL & SOAL PENGURANGAN 3 ANGKA (INDONESIAN)
+           ========================================================================== */
+        const gameLevels = [
+            {
+                levelId: 1,
+                title: "LEVEL 1: TANPA MEMINJAM",
+                questions: [
+                    { num1: 458, num2: 123, answer: 335, options: [335, 325, 345], hint: "Kurangkan nilai tempat: Satuan (8-3=5), Puluhan (5-2=3), Ratusan (4-1=3). Hasilnya 335!" },
+                    { num1: 679, num2: 245, answer: 434, options: [424, 434, 444], hint: "Hitung perlahan dari kanan: 9-5=4, 7-4=3, 6-2=4. Jawaban tepatnya 434." },
+                    { num1: 853, num2: 412, answer: 441, options: [441, 431, 451], hint: "Kurangkan dari satuan: 3-2=1, 5-1=4, 8-4=4. Hasilnya 441." }
+                ]
+            },
+            {
+                levelId: 2,
+                title: "LEVEL 2: ANGKA HILANG",
+                questions: [
+                    { questionText: "568 - ___ = 234", answer: 334, options: [334, 324, 344], hint: "Untuk mencari angka hilang di tengah: Kurangkan 568 - 234 = 334!" },
+                    { questionText: "___ - 142 = 325", answer: 467, options: [457, 467, 477], hint: "Mencari angka depan yang berkurang: Tambahkan hasil (325) + 142 = 467." },
+                    { questionText: "789 - ___ = 456", answer: 333, options: [323, 333, 343], hint: "Kurangkan angka awal (789) dengan angka hasil (456). Selisihnya adalah 333." }
+                ]
+            },
+            {
+                levelId: 3,
+                title: "LEVEL 3: DENGAN MEMINJAM",
+                questions: [
+                    { num1: 536, num2: 262, answer: 274, options: [274, 264, 284], hint: "3 puluhan tidak cukup dikurang 6. Pinjam 1 ratusan jadi 13. (13-6=7). Sisa ratusan 4-2=2. Hasil: 274." },
+                    { num1: 642, num2: 351, answer: 291, options: [281, 291, 391], hint: "4 puluhan meminjam 1 ratusan menjadi 14. 14 - 5 = 9. Ratusan tersisa 5 - 3 = 2. Hasil: 291." },
+                    { num1: 728, num2: 453, answer: 275, options: [265, 275, 285], hint: "Pinjam puluhan dari ratusan: 12 - 5 = 7. Ratusan tersisa 6 - 4 = 2. Hasil: 275." }
+                ]
+            },
+            {
+                levelId: 4,
+                title: "LEVEL 4: TANTANGAN BENTENG BALAP",
+                questions: [
+                    { num1: 915, num2: 432, answer: 483, options: [483, 473, 493], hint: "Tantangan akhir! Pinjam 1 ratusan: 11 - 3 = 8. Ratusan tersisa 8 - 4 = 4. Hasil: 483." },
+                    { num1: 804, num2: 321, answer: 483, options: [473, 483, 493], hint: "Perhatikan nilai tempat! Kurangkan 4 - 1 = 3, lalu 10 - 2 = 8, sisa 7 - 3 = 4." }
+                ]
+            }
+        ];
+
+        /* ==========================================================================
+           GAME STATE & VARIABLES
+           ========================================================================== */
+        let currentLevelIdx = 0;
+        let currentQuestionIdx = 0;
+        let totalScore = 0;
+        let totalStars = 0;
+        let lives = 3;
+        let isPaused = false;
+        let isGameStarted = false;
+        let waitingForAnswerReset = false;
+        let selectedCarColorHex = 0xef4444; // Default Red
+
+        // Player Vehicle Movement State
+        const keys = { forward: false, backward: false, left: false, right: false };
+        let joystickVector = { x: 0, y: 0 };
+        let carSpeed = 0;
+        let carSteering = 0;
+        const MAX_SPEED = 0.28;
+        const ACCEL = 0.015;
+        const FRICTION = 0.95;
+
+        /* ==========================================================================
+           THREE.JS 3D RACING SCENE & ASSETS
+           ========================================================================== */
+        let scene, camera, renderer;
+        let carMesh, carBodyMesh;
+        let gatesGroup, cloudsGroup, crystalsGroup, starsGroup, confettiGroup = [];
+        let carPos = { x: 0, y: 0.5, z: 0 };
+        let carVelocityY = 0;
+        let isGrounded = true;
+        const GRAVITY = -0.018;
+        const JUMP_FORCE = 0.38;
+
+        function init3DWorld() {
+            const container = document.getElementById('canvas-container');
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x38bdf8); // Sky Blue
+            scene.fog = new THREE.FogExp2(0x38bdf8, 0.008);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Bright Sunlight & Soft Ambient Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+            sunLight.position.set(30, 50, 20);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
+            scene.add(sunLight);
+
+            // Environment Creation
+            createRainbowRacetrack();
+            createFluffyClouds();
+            createFloatingDecorations();
+            createToyCar(selectedCarColorHex);
+
+            // Resize Handler
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Lintasan Balap Pelangi 3D Melayang
+        function createRainbowRacetrack() {
+            const trackWidth = 14;
+            const trackLength = 140;
+
+            const rainbowColors = [0xef4444, 0xf97316, 0xeab308, 0x10b981, 0x06b6d4, 0x6366f1, 0xa855f7];
+            const stripWidth = trackWidth / rainbowColors.length;
+
+            const trackGroup = new THREE.Group();
+
+            // Pelangi 7 Garis
+            rainbowColors.forEach((col, idx) => {
+                const geo = new THREE.BoxGeometry(stripWidth, 1.2, trackLength);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: col, 
+                    roughness: 0.2, 
+                    metalness: 0.1 
+                });
+                const strip = new THREE.Mesh(geo, mat);
+                strip.position.x = -trackWidth / 2 + stripWidth * idx + stripWidth / 2;
+                strip.position.y = -0.6;
+                strip.receiveShadow = true;
+                trackGroup.add(strip);
+            });
+
+            // Pagar Pembatas Glossy Warna-Warni
+            const curbGeo = new THREE.CylinderGeometry(0.3, 0.3, trackLength, 12);
+            const curbMat1 = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+            const curbMat2 = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.1 });
+
+            const leftCurb = new THREE.Mesh(curbGeo, curbMat1);
+            leftCurb.rotation.x = Math.PI / 2;
+            leftCurb.position.set(-trackWidth / 2 - 0.2, 0.1, 0);
+            trackGroup.add(leftCurb);
+
+            const rightCurb = new THREE.Mesh(curbGeo, curbMat2);
+            rightCurb.rotation.x = Math.PI / 2;
+            rightCurb.position.set(trackWidth / 2 + 0.2, 0.1, 0);
+            trackGroup.add(rightCurb);
+
+            scene.add(trackGroup);
+
+            // Kastel Ajaib di Ujung Lintasan (z = -65)
+            createMagicalCastle(-65);
+        }
+
+        // Kastel Ajaib Megah di Garis Finish
+        function createMagicalCastle(zPos) {
+            const castleGroup = new THREE.Group();
+
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.3 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.2 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.2 });
+
+            // Menara Kiri & Kanan
+            const towerGeo = new THREE.CylinderGeometry(2.5, 2.5, 14, 12);
+            const leftTower = new THREE.Mesh(towerGeo, wallMat);
+            leftTower.position.set(-8, 7, zPos);
+            castleGroup.add(leftTower);
+
+            const rightTower = new THREE.Mesh(towerGeo, wallMat);
+            rightTower.position.set(8, 7, zPos);
+            castleGroup.add(rightTower);
+
+            // Atap Kerucut Kastel
+            const coneGeo = new THREE.ConeGeometry(3.2, 6, 12);
+            const leftRoof = new THREE.Mesh(coneGeo, roofMat);
+            leftRoof.position.set(-8, 17, zPos);
+            castleGroup.add(leftRoof);
+
+            const rightRoof = new THREE.Mesh(coneGeo, roofMat);
+            rightRoof.position.set(8, 17, zPos);
+            castleGroup.add(rightRoof);
+
+            // Menara Utama Tengah
+            const centerTower = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 18, 12), wallMat);
+            centerTower.position.set(0, 9, zPos - 4);
+            castleGroup.add(centerTower);
+
+            const centerRoof = new THREE.Mesh(new THREE.ConeGeometry(4.2, 8, 12), roofMat);
+            centerRoof.position.set(0, 22, zPos - 4);
+            castleGroup.add(centerRoof);
+
+            // Bintang Emas di Puncak Kastel
+            const starGeo = new THREE.OctahedronGeometry(1.2, 0);
+            const topStar = new THREE.Mesh(starGeo, goldMat);
+            topStar.position.set(0, 27, zPos - 4);
+            castleGroup.add(topStar);
+
+            scene.add(castleGroup);
+        }
+
+        // Awan Melayang Halus di Sekitar Lintasan
+        function createFluffyClouds() {
+            cloudsGroup = new THREE.Group();
+            const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, transparent: true, opacity: 0.85 });
+
+            for (let i = 0; i < 25; i++) {
+                const cloud = new THREE.Group();
+                const pCount = 3 + Math.floor(Math.random() * 4);
+
+                for (let j = 0; j < pCount; j++) {
+                    const radius = 2 + Math.random() * 3;
+                    const pGeo = new THREE.SphereGeometry(radius, 8, 8);
+                    const pMesh = new THREE.Mesh(pGeo, cloudMat);
+                    pMesh.position.set((j - pCount / 2) * 2.2, Math.random() * 1.5, Math.random() * 1.5);
+                    cloud.add(pMesh);
+                }
+
+                cloud.position.set(
+                    (Math.random() - 0.5) * 90,
+                    -4 - Math.random() * 8,
+                    (Math.random() - 0.5) * 120
+                );
+                cloudsGroup.add(cloud);
+            }
+            scene.add(cloudsGroup);
+        }
+
+        // Kristal & Bintang Melayang
+        function createFloatingDecorations() {
+            crystalsGroup = new THREE.Group();
+            starsGroup = new THREE.Group();
+
+            const crystalMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.8 });
+            const starMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.2, metalness: 0.5 });
+
+            const crystalGeo = new THREE.OctahedronGeometry(0.7, 0);
+            const starGeo = new THREE.OctahedronGeometry(0.8, 0);
+
+            for (let i = 0; i < 16; i++) {
+                // Kristal
+                const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+                crystal.position.set((Math.random() - 0.5) * 24, 2 + Math.random() * 4, -Math.random() * 80);
+                crystalsGroup.add(crystal);
+
+                // Bintang
+                const star = new THREE.Mesh(starGeo, starMat);
+                star.position.set((Math.random() - 0.5) * 26, 3 + Math.random() * 5, -Math.random() * 80);
+                starsGroup.add(star);
+            }
+
+            scene.add(crystalsGroup);
+            scene.add(starsGroup);
+        }
+
+        // Mobil Mainan Balap Lucu 3D (TANPA MANUSIA/MATA/WAJAH)
+        function createToyCar(bodyColorHex) {
+            if (carMesh) scene.remove(carMesh);
+
+            const carGroup = new THREE.Group();
+
+            // Badan Utama Mobil Mainan Glossy
+            const bodyGeo = new THREE.BoxGeometry(1.6, 0.65, 2.8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColorHex, roughness: 0.15, metalness: 0.3 });
+            carBodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            carBodyMesh.position.y = 0.5;
+            carBodyMesh.castShadow = true;
+            carGroup.add(carBodyMesh);
+
+            // Kabin / Atap Kaca Mainan
+            const cabinGeo = new THREE.BoxGeometry(1.2, 0.55, 1.4);
+            const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.8 });
+            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+            cabin.position.set(0, 1.0, -0.2);
+            carGroup.add(cabin);
+
+            // Spoiler Balap Belakang
+            const spoilerWing = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 0.4), bodyMat);
+            spoilerWing.position.set(0, 1.25, 1.2);
+            carGroup.add(spoilerWing);
+
+            const spoilerMount1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.35, 0.1), bodyMat);
+            spoilerMount1.position.set(-0.6, 1.05, 1.2);
+            carGroup.add(spoilerMount1);
+
+            const spoilerMount2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.35, 0.1), bodyMat);
+            spoilerMount2.position.set(0.6, 1.05, 1.2);
+            carGroup.add(spoilerMount2);
+
+            // Lampu Depan Menyala (Headlights)
+            const lightGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 12);
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+            const leftLight = new THREE.Mesh(lightGeo, lightMat);
+            leftLight.rotation.x = Math.PI / 2;
+            leftLight.position.set(-0.55, 0.5, -1.41);
+            carGroup.add(leftLight);
+
+            const rightLight = new THREE.Mesh(lightGeo, lightMat);
+            rightLight.rotation.x = Math.PI / 2;
+            rightLight.position.set(0.55, 0.5, -1.41);
+            carGroup.add(rightLight);
+
+            // 4 Roda Mainan Tebal
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.35, 16);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.2 });
+
+            const wheelPositions = [
+                [-0.85, 0.4, -0.8], // Depan Kiri
+                [0.85, 0.4, -0.8],  // Depan Kanan
+                [-0.85, 0.4, 0.8],  // Belakang Kiri
+                [0.85, 0.4, 0.8]   // Belakang Kanan
+            ];
+
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.castShadow = true;
+                carGroup.add(wheel);
+
+                // Velg Koin
+                const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.37, 12), rimMat);
+                rim.rotation.z = Math.PI / 2;
+                rim.position.set(pos[0], pos[1], pos[2]);
+                carGroup.add(rim);
+            });
+
+            carMesh = carGroup;
+            scene.add(carMesh);
+        }
+
+        // Buat 3 Gerbang Jawaban 3D di Depan Pemain
+        function createAnswerGates(optionsList) {
+            if (gatesGroup) scene.remove(gatesGroup);
+
+            gatesGroup = new THREE.Group();
+            const gateXPositions = [-4.2, 0, 4.2];
+            const colors = [0xef4444, 0x10b981, 0x3b82f6];
+
+            optionsList.forEach((val, idx) => {
+                const xPos = gateXPositions[idx];
+
+                // Frame Gerbang 3D
+                const frameGeo = new THREE.BoxGeometry(3.3, 5.2, 0.6);
+                const frameMat = new THREE.MeshStandardMaterial({ color: colors[idx], roughness: 0.2 });
+                const frame = new THREE.Mesh(frameGeo, frameMat);
+                frame.position.set(xPos, 2.6, -26);
+                gatesGroup.add(frame);
+
+                // Portal Cahaya Tengah
+                const portalGeo = new THREE.PlaneGeometry(2.5, 4.2);
+                const portalMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
+                const portal = new THREE.Mesh(portalGeo, portalMat);
+                portal.position.set(xPos, 2.6, -25.9);
+                gatesGroup.add(portal);
+
+                // Canvas Texture Angka Besar & Jelas
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                
+                // Latar Belakang Kartu Angka
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.lineWidth = 14;
+                ctx.strokeStyle = '#facc15';
+                ctx.strokeRect(0, 0, 256, 256);
+                
+                // Teks Angka
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 95px Fredoka, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(val.toString(), 128, 128);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const textGeo = new THREE.PlaneGeometry(2.4, 2.4);
+                const textMat = new THREE.MeshBasicMaterial({ map: texture });
+                const textMesh = new THREE.Mesh(textGeo, textMat);
+                textMesh.position.set(xPos, 5.8, -25.8);
+                gatesGroup.add(textMesh);
+
+                // Simpan Nilai Jawaban pada Mesh Frame
+                frame.userData = { value: val };
+            });
+
+            scene.add(gatesGroup);
+        }
+
+        /* ==========================================================================
+           LOGIKA GAMEPLAY & SOAL PENGURANGAN
+           ========================================================================== */
+        function loadCurrentQuestion() {
+            const levelData = gameLevels[currentLevelIdx];
+            const qData = levelData.questions[currentQuestionIdx];
+
+            // Reset Posisi Mobil Mainan
+            carPos = { x: 0, y: 0.5, z: 0 };
+            carSpeed = 0;
+            if (carMesh) {
+                carMesh.position.set(0, 0.5, 0);
+                carMesh.rotation.y = 0;
+            }
+
+            // Update UI Header
+            document.getElementById('level-title').innerText = levelData.title;
+            document.getElementById('stage-count').innerText = `${currentQuestionIdx + 1} / ${levelData.questions.length}`;
+
+            // Progres Bar
+            const totalQ = levelData.questions.length;
+            const progress = ((currentQuestionIdx) / totalQ) * 100;
+            document.getElementById('level-progress').style.width = `${progress}%`;
+
+            // Tampilkan Soal Pengurangan
+            const questionElem = document.getElementById('math-question');
+            if (qData.questionText) {
+                questionElem.innerText = qData.questionText;
+            } else {
+                questionElem.innerText = `${qData.num1} - ${qData.num2} = ?`;
+            }
+
+            // Acak Pilihan Jawaban
+            const shuffledOptions = [...qData.options].sort(() => Math.random() - 0.5);
+
+            // Buat Gerbang Jawaban 3D
+            createAnswerGates(shuffledOptions);
+            waitingForAnswerReset = false;
+        }
+
+        // Cek Tabrakan Mobil Mainan dengan Gerbang Jawaban
+        function checkGateCollision() {
+            if (waitingForAnswerReset || !gatesGroup) return;
+
+            // Gerbang berada di Z = -26
+            if (carPos.z <= -25.2 && carPos.z >= -26.5) {
+                const levelData = gameLevels[currentLevelIdx];
+                const qData = levelData.questions[currentQuestionIdx];
+
+                // Tentukan Gerbang Berdasarkan Posisi X Mobil
+                let selectedVal = null;
+                if (carPos.x < -2) selectedVal = gatesGroup.children[0]?.userData?.value;
+                else if (carPos.x > 2) selectedVal = gatesGroup.children[6]?.userData?.value;
+                else selectedVal = gatesGroup.children[3]?.userData?.value;
+
+                if (selectedVal !== null && selectedVal !== undefined) {
+                    waitingForAnswerReset = true;
+
+                    if (selectedVal === qData.answer) {
+                        // JAWABAN BENAR!
+                        handleCorrectAnswer();
+                    } else {
+                        // JAWABAN SALAH!
+                        handleWrongAnswer(qData.hint);
+                    }
+                }
+            }
+        }
+
+        function handleCorrectAnswer() {
+            totalScore += 100;
+            totalStars += 1;
+            updateUI();
+
+            // Animasi Turbo Jump
+            carVelocityY = JUMP_FORCE * 1.1;
+
+            setTimeout(() => {
+                currentQuestionIdx++;
+                const levelData = gameLevels[currentLevelIdx];
+
+                if (currentQuestionIdx >= levelData.questions.length) {
+                    currentQuestionIdx = 0;
+                    currentLevelIdx++;
+
+                    if (currentLevelIdx >= gameLevels.length) {
+                        // KEMENANGAN TOTAL GAME!
+                        showFinalResultScreen();
+                        return;
+                    }
+                }
+                loadCurrentQuestion();
+            }, 750);
+        }
+
+        function handleWrongAnswer(hintText) {
+            lives--;
+            updateUI();
+
+            document.getElementById('feedback-hint').innerText = hintText;
+            document.getElementById('feedback-modal').classList.remove('hidden');
+
+            if (lives <= 0) {
+                // Reset bensin/nyawa tanpa menghukum anak-anak
+                lives = 3;
+                updateUI();
+            }
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+            carPos = { x: 0, y: 0.5, z: 0 };
+            carSpeed = 0;
+            if (carMesh) {
+                carMesh.position.set(0, 0.5, 0);
+                carMesh.rotation.y = 0;
+            }
+            waitingForAnswerReset = false;
+        }
+
+        function updateUI() {
+            document.getElementById('stars-text').innerText = totalStars;
+            document.getElementById('score-text').innerText = totalScore;
+
+            // Render Nyawa Hati
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    livesContainer.innerHTML += '<i class="fa-solid fa-heart text-rose-500"></i>';
+                } else {
+                    livesContainer.innerHTML += '<i class="fa-regular fa-heart text-slate-600"></i>';
+                }
+            }
+        }
+
+        /* ==========================================================================
+           KONTROL PENGEMUDI & ANIMATION LOOP
+           ========================================================================== */
+        function setupControls() {
+            // Keyboard
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = true;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = true;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
+                if (e.code === 'Space') triggerJump();
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = false;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = false;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+            });
+
+            // Virtual Joystick
+            const zone = document.getElementById('joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+            let isTouching = false;
+            let startX, startY;
+
+            function handleStart(e) {
+                isTouching = true;
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+            }
+
+            function handleMove(e) {
+                if (!isTouching) return;
+                const touch = e.touches ? e.touches[0] : e;
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                const dist = Math.min(Math.hypot(dx, dy), 50);
+                const angle = Math.atan2(dy, dx);
+
+                const knobX = Math.cos(angle) * dist;
+                const knobY = Math.sin(angle) * dist;
+
+                knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+                joystickVector.x = knobX / 50;
+                joystickVector.y = knobY / 50;
+            }
+
+            function handleEnd() {
+                isTouching = false;
+                knob.style.transform = `translate(0px, 0px)`;
+                joystickVector = { x: 0, y: 0 };
+            }
+
+            zone.addEventListener('touchstart', handleStart);
+            zone.addEventListener('touchmove', handleMove);
+            zone.addEventListener('touchend', handleEnd);
+            zone.addEventListener('mousedown', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+        }
+
+        function triggerJump() {
+            if (isGrounded && !isPaused && isGameStarted) {
+                carVelocityY = JUMP_FORCE;
+                isGrounded = false;
+            }
+        }
+
+        function selectCarColor(colorHex, btnElement) {
+            selectedCarColorHex = colorHex;
+            document.querySelectorAll('.car-card').forEach(card => card.classList.remove('selected'));
+            btnElement.classList.add('selected');
+            createToyCar(selectedCarColorHex);
+        }
+
+        // Physics & Pergerakan Mobil Mainan
+        function updateCarMovement() {
+            if (!isGameStarted || isPaused) return;
+
+            // Percepatan / Mendorong
+            if (keys.forward || joystickVector.y < -0.1) {
+                carSpeed += ACCEL;
+            } else if (keys.backward || joystickVector.y > 0.1) {
+                carSpeed -= ACCEL * 0.7;
+            } else {
+                carSpeed *= FRICTION;
+            }
+
+            // Batas Kecepatan Maksimal
+            carSpeed = Math.max(-MAX_SPEED * 0.5, Math.min(MAX_SPEED, carSpeed));
+
+            // Kemudi / Steering
+            let steerDir = 0;
+            if (keys.left || joystickVector.x < -0.1) steerDir = -1;
+            if (keys.right || joystickVector.x > 0.1) steerDir = 1;
+
+            carPos.x += steerDir * 0.18;
+            carPos.z -= carSpeed;
+
+            // Batas Lintasan Pelangi
+            carPos.x = Math.max(-6.2, Math.min(6.2, carPos.x));
+            carPos.z = Math.max(-28, Math.min(5, carPos.z));
+
+            // Gravitasi & Lompatan
+            carVelocityY += GRAVITY;
+            carPos.y += carVelocityY;
+
+            if (carPos.y <= 0.5) {
+                carPos.y = 0.5;
+                carVelocityY = 0;
+                isGrounded = true;
+            }
+
+            // Update Mesh Three.js
+            if (carMesh) {
+                carMesh.position.set(carPos.x, carPos.y, carPos.z);
+                carMesh.rotation.y = -steerDir * 0.2;
+            }
+
+            // Third-Person Camera Follow
+            camera.position.x = carPos.x * 0.45;
+            camera.position.y = carPos.y + 3.8;
+            camera.position.z = carPos.z + 8.5;
+            camera.lookAt(carPos.x * 0.45, carPos.y + 1.2, carPos.z - 6);
+
+            // Cek Tabrakan Gerbang
+            checkGateCollision();
+        }
+
+        // Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            updateCarMovement();
+
+            // Rotasi Kristal & Bintang Melayang
+            if (crystalsGroup) {
+                crystalsGroup.children.forEach(c => {
+                    c.rotation.y += 0.02;
+                });
+            }
+            if (starsGroup) {
+                starsGroup.children.forEach(s => {
+                    s.rotation.y += 0.025;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /* ==========================================================================
+           GAME STATE CONTROL FUNCTIONS
+           ========================================================================== */
+        function startGame() {
+            document.getElementById('start-modal').classList.add('hidden');
+            isGameStarted = true;
+            currentLevelIdx = 0;
+            currentQuestionIdx = 0;
+            totalScore = 0;
+            totalStars = 0;
+            lives = 3;
+            updateUI();
+            loadCurrentQuestion();
+        }
+
+        function togglePause() {
+            if (!isGameStarted) return;
+            isPaused = !isPaused;
+            const pauseModal = document.getElementById('pause-modal');
+            if (isPaused) {
+                pauseModal.classList.remove('hidden');
+            } else {
+                pauseModal.classList.add('hidden');
+            }
+        }
+
+        function restartLevel() {
+            document.getElementById('pause-modal').classList.add('hidden');
+            isPaused = false;
+            currentQuestionIdx = 0;
+            loadCurrentQuestion();
+        }
+
+        function returnToMainMenu() {
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('result-modal').classList.add('hidden');
+            document.getElementById('start-modal').classList.remove('hidden');
+            isGameStarted = false;
+            isPaused = false;
+        }
+
+        function showFinalResultScreen() {
+            document.getElementById('final-stars').innerText = `${totalStars} Bintang`;
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        // Initialize Engine on Window Load
+        window.onload = function() {
+            init3DWorld();
+            setupControls();
+            animate();
+        };
+    </script>
+</body>
+</html>
